@@ -17,6 +17,6 @@ module.exports = {
 		"https://aquent.fr",
 		"https://aquent.de",
 		"https://aquent.co.jp",
-		"hhtps://aquentcareers.com"
+		"https://aquentcareers.com"
 	]
 };
