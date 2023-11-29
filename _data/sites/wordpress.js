@@ -11,8 +11,7 @@ module.exports = {
 	},
 	urls: [
 		"https://www.robohead.net/",
-    "https://aquentstudios.com",
-    "https://designingforgood.com",
-    "https://aquentcareers.com.au"
+    		"https://aquentstudios.com",
+		"https://aquentscout.com"
 	]
 };
