@@ -10,13 +10,13 @@ module.exports = {
 		freshChrome: "site"
 	},
 	urls: [
-		"https://aquent.com/",
+		"https://aquent.com",
 		"https://aquent.co.uk",
 		"https://aquent.com.au",
 		"https://aquent.nl",
 		"https://aquent.fr",
 		"https://aquent.de",
 		"https://aquent.co.jp",
-		"https://aquentcareers.com"
+		"https://aquenttalent.com"
 	]
 };
