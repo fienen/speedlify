@@ -3,6 +3,7 @@ const shortHash = require("short-hash");
 const lodash = require("lodash");
 const getObjectKey = require("./utils/getObjectKey.js");
 const calc = require("./utils/calc.js");
+const Sparkline = require('./utils/sparkline.js');
 
 function hasUrl(urls, requestedUrl) {
 	// urls comes from sites[vertical].urls, all requestedUrls (may not include trailing slash)
@@ -21,13 +22,10 @@ function hasUrl(urls, requestedUrl) {
 	return false;
 }
 
-function showDigits(num, digits = 2, alwaysShowDigits = true) {
+function showDigits(num, digits = 2) {
 	let toNum = parseFloat(num);
-	if(!alwaysShowDigits && toNum === Math.floor(toNum)) {
-		// if a whole number like 0, just show 0 and not 0.00
-		return toNum;
-	}
-	return toNum.toFixed(digits);
+	let afterFixed = toNum.toFixed(digits);
+	return afterFixed;
 }
 
 function pad(num) {
@@ -67,6 +65,9 @@ function getLighthouseTotal(entry) {
 
 module.exports = function(eleventyConfig) {
 	eleventyConfig.addFilter("shortHash", shortHash);
+	eleventyConfig.setServerOptions({
+		domDiff: false
+	});
 
 	eleventyConfig.addFilter("repeat", function(str, times) {
 		let result = '';
@@ -100,7 +101,7 @@ module.exports = function(eleventyConfig) {
 	});
 
 	eleventyConfig.addFilter("showDigits", function(num, digits) {
-		return showDigits(num, digits, false);
+		return showDigits(num, digits);
 	});
 
 	eleventyConfig.addFilter("displayTime", function(time) {
@@ -300,6 +301,15 @@ module.exports = function(eleventyConfig) {
 
 	eleventyConfig.addFilter("calc", calc);
 
+	function getWeeklyServiceCacheBuster() {
+		let d = new Date();
+		// Weekly
+		return `_${d.getFullYear()}${pad(d.getMonth()+1)}_${d.getDate() % 7}`;
+	}
+	eleventyConfig.addFilter("generatorImageUrl", (url) => {
+		return `https://v1.generator.11ty.dev/image/${encodeURIComponent(url)}/${getWeeklyServiceCacheBuster()}/`;
+	});
+
 	eleventyConfig.addPairedShortcode("starterMessage", (htmlContent) => {
 		if(process.env.SITE_NAME !== "speedlify") {
 			return htmlContent;
@@ -319,4 +329,44 @@ module.exports = function(eleventyConfig) {
 		ui: false,
 		ghostMode: false
 	});
+	eleventyConfig.addShortcode('lighthouseSparkline', (site) => {
+		const timeSeries = Object.values(site).sort(
+			(a, b) => a.timestamp - b.timestamp
+		);
+		const values = timeSeries.map((run) => run.lighthouse?.total || 0);
+		return Sparkline({
+			// red-orange-green gradient similar to usage in <speedlify-score>
+			gradient: [
+				{ color: '#ff4e42', offset: '0%' },
+				{ color: '#ff4e42', offset: '30%' },
+				{ color: '#ffa400', offset: '70%' },
+				{ color: '#ffa400', offset: '85%' },
+				{ color: '#0cce6b', offset: '95%' },
+				{ color: '#0cce6b', offset: '100%' },
+			],
+			values,
+			min: 0,
+			max: 400,
+			timeSeries,
+		});
+	});
+
+	eleventyConfig.addShortcode('weightSparkline', (site) => {
+		const timeSeries = Object.values(site).sort(
+			(a, b) => a.timestamp - b.timestamp
+		);
+		const values = timeSeries.map((run) => run.weight?.total || 0);
+		return Sparkline({
+			color: '#d151ff',
+			values,
+			min: 0,
+			timeSeries,
+			// Display raw bytes as pretty values on y axis, e.g. 49244 => 48K
+			formatAxis: (num) => {
+				const { value, unit } = byteSize(num, { units: 'iec', precision: 0 });
+				return value === '0' ? value : value + unit.slice(0, 1);
+			},
+		});
+	});
+
 };
